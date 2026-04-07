@@ -843,13 +843,27 @@ def _fig_flux_density(
 ) -> None:
     total_per_sample = flux_raw.sum(axis=1)
     sorted_totals = np.sort(total_per_sample)[::-1]
+    n_samples = len(total_per_sample)
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 3.8))
 
-    axes[0].hist(
-        total_per_sample, bins=40, color="#4477AA",
-        edgecolor="#333", linewidth=0.5, alpha=0.85,
-    )
+    # Adaptive bin count — matplotlib raises if there are more requested
+    # bins than distinct finite values in the data (e.g. 1 sample).
+    n_bins = max(1, min(40, n_samples))
+    if n_samples == 1:
+        # Single bar centred at the one value; hist with a single bar
+        # looks silly so we draw a bar chart instead.
+        axes[0].bar(
+            [0], total_per_sample, color="#4477AA",
+            edgecolor="#333", linewidth=0.5, alpha=0.85, width=0.6,
+        )
+        axes[0].set_xticks([0])
+        axes[0].set_xticklabels(["sample 1"])
+    else:
+        axes[0].hist(
+            total_per_sample, bins=n_bins, color="#4477AA",
+            edgecolor="#333", linewidth=0.5, alpha=0.85,
+        )
     axes[0].set_xlabel("Total predicted flux / sample")
     axes[0].set_ylabel("Sample count")
     axes[0].set_title("(a) Flux distribution", fontsize=11, loc="left")
