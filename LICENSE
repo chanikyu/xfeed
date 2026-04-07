@@ -1,0 +1,55 @@
+xFeed Dual License
+
+Copyright (c) 2026 Kyu-Chan Lee. All rights reserved.
+
+
+================================================================================
+OPTION A: GNU General Public License v3.0 (Academic / Non-commercial Use)
+================================================================================
+
+This software is licensed under the GNU General Public License v3.0 for
+academic, research, and non-commercial use.
+
+You may use, modify, and distribute this software under the terms of the
+GPL-3.0, provided that:
+
+  1. Any derivative work is also distributed under GPL-3.0.
+  2. The source code of any derivative work is made publicly available.
+  3. Proper attribution is given by citing the associated publication:
+
+     [Citation to be added upon publication]
+
+For the full GPL-3.0 license text, see:
+https://www.gnu.org/licenses/gpl-3.0.txt
+
+
+================================================================================
+OPTION B: Commercial License (Enterprise / Commercial Use)
+================================================================================
+
+For commercial use — including but not limited to incorporation into
+proprietary software, SaaS platforms, commercial products, or any use that
+does not comply with GPL-3.0 — a separate commercial license is required.
+
+Commercial licenses grant:
+  - Rights to use xFeed in proprietary / closed-source products
+  - Freedom from GPL-3.0 copyleft obligations
+  - Priority support and custom integration assistance
+
+For commercial licensing inquiries, contact:
+
+  Email: [contact email]
+  Web:   [contact URL]
+
+
+================================================================================
+WARRANTY DISCLAIMER
+================================================================================
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

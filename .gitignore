@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OMC state
+.omc/
+
+# Test data & outputs
+tests/
+
+# User data (profiles, predictions)
+xfeed_data/
+xfeed_model/
+xfeed_predictions.tsv
+
+# Conda recipe (built out-of-tree, not part of the public source)
+conda-recipe/
+
+# Slides / internal docs (not part of the public tool)
+*.pptx
+*.key
+*.pdf
+
+# Per-run output written next to a user abundance file
+images/
+data/
