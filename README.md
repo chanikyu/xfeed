@@ -477,13 +477,18 @@ same numbers in any tool without re-running inference.
   <img src="examples/architecture.png" alt="xFeed FluxMLP architecture" width="480">
 </p>
 
-- **Input**: log1p species abundance, `(2,055,)`
-- **Encoder**: stacked `LayerNorm → Linear → GELU → Dropout` blocks,
-  `2055 → 1024 → 512 → 256 → 128`
+- **Input**: ln(1+x) species abundance, `(2,055,)`
+- **Encoder**: one `LayerNorm → Linear → GELU → Dropout` block,
+  `2055 → 128` (v1.1.0 canonical)
 - **Head**: `Linear(128, 1780)` → `softplus` to keep flux non-negative
-- **Parameters**: ~3.0 M
+- **Parameters**: ~497 K
 - **Loss**: MSE on ln(1 + flow count)
 - **No KEGG modules or capability annotations on the input side**
+- v1.0.0 (legacy) used a deeper 4-hidden-block 3.03 M-parameter
+  encoder; the §2.9 ablation of the companion paper showed this was
+  over-parameterised, and v1.1.0 promoted the one-hidden-layer
+  MLP-small to canonical. The legacy checkpoint is archived under
+  `model/legacy/xfeed_v1_0_0.pt`.
 
 ## How it works
 
@@ -497,9 +502,10 @@ same numbers in any tool without re-running inference.
    compound equals (# producer species active) × (# consumer species
    active) − (# species that do both). These are the targets FluxMLP
    learns to predict from abundance alone.
-4. **FluxMLP** — a 3.0 M-parameter feed-forward network learns the
-   1,780-dim flux vector from the 2,055-dim log1p species abundance
-   vector, without any KEGG feature engineering on the input side.
+4. **FluxMLP** — a compact ~497 K-parameter feed-forward network
+   learns the 1,780-dim flux vector from the 2,055-dim ln(1+x)
+   species abundance vector through a single 128-unit hidden layer,
+   without any KEGG feature engineering on the input side.
 
 ## Performance
 
@@ -507,36 +513,40 @@ Trained on 8,186 samples from the curatedMetagenomicData collection
 (subject-level split across 84 studies) and evaluated on a held-out
 test set of 1,700 samples:
 
-| Metric | Value |
-|--------|------:|
-| Mean per-compound Pearson r | **0.484** |
-| Median per-compound Pearson r | **0.618** |
-| Predictable compounds (non-zero test variance) | 1,373 / 1,780 |
-| Compounds with Pearson > 0.5 | 832 / 1,373 (60.6 %) |
-| Compounds with Pearson > 0.7 | 516 / 1,373 (37.6 %) |
-| Log-MSE vs. mean baseline | **−17.3 %** |
-| Mean Pearson vs. nearest-neighbour baseline | **+63.9 %** |
-| Mean Spearman vs. nearest-neighbour baseline | **+79.9 %** |
+| Metric | v1.1.0 | v1.0.0 (legacy) |
+|--------|-------:|----------------:|
+| Parameters                                       | **497 K**   | 3.03 M |
+| Mean per-compound Pearson r                      | **0.499**   | 0.484 |
+| Median per-compound Pearson r                    | **0.641**   | 0.618 |
+| Predictable compounds (non-zero test variance)   | 1,373 / 1,780 | 1,373 / 1,780 |
+| Compounds with Pearson > 0.5                     | **904 / 1,373 (65.8 %)** | 832 / 1,373 (60.6 %) |
+| Compounds with Pearson > 0.7                     | 516 / 1,373 (37.6 %) | 516 / 1,373 (37.6 %) |
+| Log-MSE vs. mean baseline                        | **−39.6 %** | −17.3 % |
+| Mean Pearson vs. nearest-neighbour baseline      | **+69.0 %** | +63.9 % |
+| Mean Spearman vs. nearest-neighbour baseline     | **+78.9 %** | +79.9 % |
+| F1 @ raw > 1                                     | **0.944**   | 0.941 |
+| AUC-ROC (threshold-free)                         | **0.9908**  | 0.9897 |
 
-Biologically important metabolites (test-set Pearson r):
+Biologically important metabolites (test-set Pearson r on v1.1.0):
 
 | Compound | Pearson r |
 |----------|----------:|
-| β-Alanine | 0.81 |
-| Biotin (B7) | 0.79 |
-| D-Glucose | 0.78 |
-| L-Glutamate | 0.77 |
-| **Acetate** | **0.77** |
-| L-Tryptophan | 0.77 |
-| Indole | 0.76 |
-| Thiamine (B1) | 0.76 |
-| **Butyrate** | **0.73** |
-| **Propionate** | **0.62** |
+| **Butyrate** | **0.77** |
+| Pantothenate (B5) | 0.75 |
+| Biotin (B7) | 0.74 |
+| Fumarate | 0.73 |
+| Glycine / Cysteine / Methionine / Serine / Alanine | 0.72 |
+| **Acetate** | **0.72** |
+| Indole | 0.72 |
+| L-Tryptophan | 0.71 |
+| Succinate | 0.71 |
+| **Propionate** | **0.66** |
 
-All three principal short-chain fatty acids — acetate, butyrate,
-propionate — plus seven amino acids (mean Pearson r = 0.78), three
-B-vitamins (mean r = 0.75), and the tryptophan → indole gut-brain axis
-are all directly recovered from shotgun species abundance alone.
+All three principal short-chain fatty acids — butyrate, acetate,
+propionate — plus 12 well-predicted amino acids (mean Pearson r = 0.72),
+three B-vitamins (mean r = 0.75, pantothenate / biotin / thiamine),
+and the tryptophan → indole gut-brain axis are all directly recovered
+from shotgun species abundance alone.
 
 Full per-compound metrics for all 1,780 KEGG compounds are shipped
 with the companion manuscript as a supplementary table.

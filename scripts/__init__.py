@@ -7,4 +7,4 @@ per-sample, per-compound cross-feeding flux counts for 1,780 KEGG
 cross-feedable compounds derived from 4,498 KEGG REACTIONS.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
