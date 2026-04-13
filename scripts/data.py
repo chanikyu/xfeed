@@ -141,6 +141,67 @@ def compute_sample_flows(
     return out
 
 
+def compute_weighted_sample_flows(
+    abundance: np.ndarray,
+    produces_mat: np.ndarray,
+    consumes_mat: np.ndarray,
+    weight_fn: str = "raw",
+) -> np.ndarray:
+    """Compute abundance-weighted cross-feeding flux per (sample, compound).
+
+    Instead of binary active/inactive counting, each species' contribution
+    is weighted by its abundance. This captures the biological reality that
+    a species at 50% abundance contributes more cross-feeding than one at
+    0.01%.
+
+    For each sample s and compound c:
+        weighted_prod(c) = Σ_p  abundance(p) × produces(p, c)
+        weighted_cons(c) = Σ_q  abundance(q) × consumes(q, c)
+        weighted_both(c) = Σ_b  abundance(b)² × both(b, c)
+        flux(s, c)       = weighted_prod × weighted_cons − weighted_both
+
+    The self-cycling correction subtracts abundance²(b) for species that
+    both produce and consume, removing the (b, b) diagonal from the
+    outer product.
+
+    Parameters
+    ----------
+    abundance : (n_samples, n_species) float — raw relative abundance
+    produces_mat : (n_species, n_compounds) bool
+    consumes_mat : (n_species, n_compounds) bool
+    weight_fn : {"raw", "sqrt", "log1p"} — transform applied to abundance
+        before weighting. "sqrt" dampens extreme outliers; "log1p" compresses
+        further. "raw" uses relative abundance directly.
+
+    Returns
+    -------
+    (n_samples, n_compounds) float32
+    """
+    abd = abundance.copy().astype(np.float32)
+
+    # Apply weight transform
+    if weight_fn == "sqrt":
+        abd = np.sqrt(abd)
+    elif weight_fn == "log1p":
+        abd = np.log1p(abd * 100)  # scale to [0, ~5] range before log
+    elif weight_fn != "raw":
+        raise ValueError(f"Unknown weight_fn: {weight_fn!r}")
+
+    # Vectorized: (n_samples, n_species) @ (n_species, n_compounds)
+    prod_f = produces_mat.astype(np.float32)
+    cons_f = consumes_mat.astype(np.float32)
+    both_f = (produces_mat & consumes_mat).astype(np.float32)
+
+    # weighted_prod[s, c] = sum_p abd[s, p] * produces[p, c]
+    weighted_prod = abd @ prod_f        # (n_samples, n_compounds)
+    weighted_cons = abd @ cons_f        # (n_samples, n_compounds)
+    # self-cycling: sum_b abd[s, b]^2 * both[b, c]
+    weighted_both = (abd ** 2) @ both_f  # (n_samples, n_compounds)
+
+    flux = weighted_prod * weighted_cons - weighted_both
+    return np.maximum(flux, 0).astype(np.float32)
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # PyTorch Dataset
 # ═══════════════════════════════════════════════════════════════════════

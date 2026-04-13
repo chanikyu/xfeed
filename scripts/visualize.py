@@ -1256,6 +1256,7 @@ def _fig_sankey(
     top_n_compounds: int = 10,
     top_n_producers: int = 12,
     top_n_consumers: int = 12,
+    focus_compounds: list[str] | None = None,
 ) -> None:
     """3-column Sankey diagram drawn entirely in matplotlib.
 
@@ -1269,9 +1270,15 @@ def _fig_sankey(
     from matplotlib.patches import PathPatch, Rectangle
     from matplotlib.path import Path as MplPath
 
-    # 1. Pick top-K compounds by predicted mean flux
+    # 1. Pick compounds: focus_compounds if provided, else top-K by mean flux
     mean_flux = flux_raw.mean(axis=0)
-    top_c_idx = np.argsort(-mean_flux)[:top_n_compounds]
+    if focus_compounds:
+        top_c_idx = np.array([
+            compound_list.index(c) for c in focus_compounds
+            if c in compound_list
+        ])
+    else:
+        top_c_idx = np.argsort(-mean_flux)[:top_n_compounds]
     top_c = [(compound_list[i], float(mean_flux[i])) for i in top_c_idx]
 
     if not top_c:
@@ -1980,6 +1987,7 @@ def generate_visualizations(
     species_caps: dict[str, dict[str, set[str]]] | None = None,
     image_format: str = "png",
     flux_top_species: int = 10,
+    focus_compounds: list[str] | None = None,
 ) -> tuple[list[Path], dict[str, str]]:
     """Generate figures into ``output_dir/images/``.
 
@@ -2043,6 +2051,17 @@ def generate_visualizations(
         "std_flux_raw":  stds_raw,
         "cv_raw":        cv_raw,
     }).sort_values("mean_flux", ascending=False)
+
+    # focus_compounds가 설정되면 해당 compound만 필터링하여 top_n 대체
+    if focus_compounds:
+        focus_mask = df_top["compound_id"].isin(focus_compounds)
+        if focus_mask.any():
+            df_top = pd.concat([
+                df_top[focus_mask],
+                df_top[~focus_mask],
+            ])
+            top_n = focus_mask.sum()
+            logger.info("  Focus compounds: %d specified, %d found", len(focus_compounds), top_n)
 
     outputs: list[Path] = []
 
@@ -2298,14 +2317,22 @@ def generate_visualizations(
             top_n_compounds=min(top_n // 2, 10),
             top_n_producers=12,
             top_n_consumers=12,
+            focus_compounds=focus_compounds,
         )
         if p_sankey.exists():
             outputs.append(p_sankey)
             # Source data: producer → compound → consumer edges for the
             # top compounds in the sankey, using the same selection
             # logic as the figure itself (rank by mean predicted flux).
-            n_sankey_compounds = min(top_n // 2, 10)
-            top_flux_idx = np.argsort(-means_raw)[:n_sankey_compounds]
+            if focus_compounds:
+                top_flux_idx = np.array([
+                    compound_list.index(c) for c in focus_compounds
+                    if c in compound_list
+                ])
+                n_sankey_compounds = len(top_flux_idx)
+            else:
+                n_sankey_compounds = min(top_n // 2, 10)
+                top_flux_idx = np.argsort(-means_raw)[:n_sankey_compounds]
             mean_abd = abundance.mean(axis=0)
             present = {
                 sp for sp, a in zip(species_list, mean_abd)

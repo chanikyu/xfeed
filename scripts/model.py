@@ -96,7 +96,7 @@ def save_checkpoint(
     """Persist model weights + vocabulary so predict() can reload without profiles."""
     torch.save(
         {
-            "version": "1.0.0",
+            "version": "1.2.0",
             "model_state_dict": {k: v.cpu() for k, v in model.state_dict().items()},
             "config": {
                 "n_species": model.cfg.n_species,

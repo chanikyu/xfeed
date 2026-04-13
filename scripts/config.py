@@ -15,23 +15,31 @@ DEFAULT_DATA_DIR = Path.home() / ".xfeed"
 
 # GitHub Releases — pre-built profiles + model weights
 GITHUB_REPO = "chanikyu/xfeed"
-RELEASE_TAG = "v1.1.0"
-RELEASE_ASSET = "xfeed-data-v1.1.0.tar.gz"
+RELEASE_TAG = "v1.2.0"
+RELEASE_ASSET = "xfeed-data-v1.2.0.tar.gz"
 RELEASE_URL = f"https://github.com/{GITHUB_REPO}/releases/download/{RELEASE_TAG}/{RELEASE_ASSET}"
 
 # ══════════════════════════════════════════════════════════════════════
-# Model architecture — FluxMLP (v1.1.0 canonical)
+# Model architecture — FluxMLP (v1.2.0 canonical)
 # ══════════════════════════════════════════════════════════════════════
-# Matches the shape of the released checkpoint. v1.1.0 promotes the
-# single-hidden-layer MLP-small (~497 K parameters) to canonical after
-# the §2.9 ablation showed it outperforms the 3.03 M four-layer v1.0.0
-# on every headline metric (see paper/manuscript/draft_v4.txt).
-# The legacy four-layer checkpoint is archived under
-# paper/tool/model/legacy/xfeed_v1_0_0.pt for reproducibility.
+# Same MLP-small architecture as v1.1.0 (~497 K parameters).
+# v1.2.0 adds concordance-aware multi-task training:
+#   Loss = MSE + β×concordance_hinge + γ×metabolomics_correlation
+# This improves literature concordance from 46% to 92% (12/13 diseases)
+# and HMP2 metabolomics correlation (butyrate ρ 0.04 → 0.51).
+# Legacy checkpoints archived under paper/tool/model/legacy/.
 N_SPECIES_DEFAULT = 2055       # shotgun species in curatedMetagenomicData
 N_COMPOUNDS_DEFAULT = 1780     # KEGG reaction-derived cross-feedable compounds
-HIDDEN_DIMS = (128,)           # v1.1.0: one 128-unit hidden layer
+HIDDEN_DIMS = (128,)           # v1.2.0: one 128-unit hidden layer (same as v1.1.0)
 DROPOUT_RATE = 0.30
+
+# ══════════════════════════════════════════════════════════════════════
+# Label generation — Stage 1 upgrade: abundance-weighted labels
+# ══════════════════════════════════════════════════════════════════════
+# "binary": original v1.0/v1.1 pair counting (active/inactive species)
+# "weighted": Stage 1 abundance-weighted (flux ∝ abundance(p) × abundance(q))
+LABEL_TYPE = "weighted"
+WEIGHT_FN = "raw"  # "raw" | "sqrt" | "log1p" — transform on abundance before weighting
 
 # ══════════════════════════════════════════════════════════════════════
 # Training defaults
